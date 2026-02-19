@@ -17,13 +17,33 @@ const PatientDashboard = () => {
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
-      const { data } = await supabase
+      // Fetch appointments with provider info
+      const { data: appts } = await supabase
         .from('appointments')
-        .select('*, providers(specialization, profiles:user_id(first_name, last_name))')
+        .select('*, providers(id, specialization, user_id)')
         .eq('patient_id', user.id)
         .order('appointment_date', { ascending: true })
         .limit(5);
-      setAppointments(data || []);
+
+      if (appts && appts.length > 0) {
+        // Get unique provider user_ids to fetch their names
+        const providerUserIds = [...new Set(appts.map(a => a.providers?.user_id).filter(Boolean))];
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, first_name, last_name')
+          .in('user_id', providerUserIds);
+
+        const profileMap = Object.fromEntries((profiles || []).map(p => [p.user_id, p]));
+        const enriched = appts.map(a => ({
+          ...a,
+          doctor_name: a.providers?.user_id && profileMap[a.providers.user_id]
+            ? `Dr. ${profileMap[a.providers.user_id].first_name} ${profileMap[a.providers.user_id].last_name}`
+            : 'Doctor',
+        }));
+        setAppointments(enriched);
+      } else {
+        setAppointments([]);
+      }
       setLoading(false);
     };
     fetchData();
@@ -92,7 +112,7 @@ const PatientDashboard = () => {
                   <div key={appt.id} className="flex items-center gap-3 p-3 rounded border border-border">
                     <Clock className="h-4 w-4 text-primary shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground">{appt.providers?.specialization || 'Consultation'}</p>
+                      <p className="text-sm font-medium text-foreground">{appt.doctor_name} — {appt.providers?.specialization || 'Consultation'}</p>
                       <p className="text-xs text-muted-foreground">{appt.appointment_date} · {appt.start_time?.slice(0, 5)}</p>
                     </div>
                     <Badge variant="outline">{appt.status}</Badge>

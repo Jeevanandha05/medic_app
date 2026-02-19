@@ -25,17 +25,32 @@ const BookAppointment = () => {
 
   useEffect(() => {
     const fetchProviders = async () => {
-      const { data } = await supabase
+      const { data: provs } = await supabase
         .from('providers')
-        .select('*, profiles:user_id(first_name, last_name)')
+        .select('*')
         .eq('is_active', true);
-      setProviders(data || []);
+
+      if (provs && provs.length > 0) {
+        const userIds = provs.map(p => p.user_id);
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, first_name, last_name')
+          .in('user_id', userIds);
+
+        const profileMap = Object.fromEntries((profiles || []).map(p => [p.user_id, p]));
+        setProviders(provs.map(p => ({
+          ...p,
+          profile: profileMap[p.user_id] || { first_name: 'Unknown', last_name: '' },
+        })));
+      } else {
+        setProviders([]);
+      }
     };
     fetchProviders();
   }, []);
 
   const filtered = providers.filter(p => {
-    const name = `${p.profiles?.first_name} ${p.profiles?.last_name} ${p.specialization}`.toLowerCase();
+    const name = `${p.profile?.first_name} ${p.profile?.last_name} ${p.specialization}`.toLowerCase();
     return name.includes(search.toLowerCase());
   });
 
@@ -87,10 +102,10 @@ const BookAppointment = () => {
               >
                 <CardContent className="p-4 flex items-center gap-3">
                   <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center font-bold text-sm text-foreground">
-                    {p.profiles?.first_name?.[0]}{p.profiles?.last_name?.[0]}
+                    {p.profile?.first_name?.[0]}{p.profile?.last_name?.[0]}
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium text-foreground">Dr. {p.profiles?.first_name} {p.profiles?.last_name}</p>
+                    <p className="font-medium text-foreground">Dr. {p.profile?.first_name} {p.profile?.last_name}</p>
                     <p className="text-sm text-muted-foreground">{p.specialization} · ${p.consultation_fee || 0}</p>
                   </div>
                   <span className="flex items-center gap-1 text-sm text-muted-foreground">

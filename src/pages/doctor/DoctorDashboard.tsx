@@ -5,7 +5,7 @@ import { SimpleLayout } from '@/components/layout/SimpleLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, XCircle, Clock, Users } from 'lucide-react';
+import { CheckCircle2, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const DoctorDashboard = () => {
@@ -15,24 +15,40 @@ const DoctorDashboard = () => {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchData = async () => {
     if (!user) return;
-    const fetch = async () => {
-      const { data: prov } = await supabase.from('providers').select('*').eq('user_id', user.id).single();
-      setProvider(prov);
-      if (prov) {
-        const { data } = await supabase
-          .from('appointments')
-          .select('*, profiles:patient_id(first_name, last_name)')
-          .eq('provider_id', prov.id)
-          .order('appointment_date', { ascending: true })
-          .limit(10);
-        setAppointments(data || []);
+    const { data: prov } = await supabase.from('providers').select('*').eq('user_id', user.id).single();
+    setProvider(prov);
+    if (prov) {
+      const { data: appts } = await supabase
+        .from('appointments')
+        .select('*')
+        .eq('provider_id', prov.id)
+        .order('appointment_date', { ascending: true })
+        .limit(10);
+
+      if (appts && appts.length > 0) {
+        const patientIds = [...new Set(appts.map(a => a.patient_id))];
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, first_name, last_name')
+          .in('user_id', patientIds);
+
+        const profileMap = Object.fromEntries((profiles || []).map(p => [p.user_id, p]));
+        setAppointments(appts.map(a => ({
+          ...a,
+          patient_name: profileMap[a.patient_id]
+            ? `${profileMap[a.patient_id].first_name} ${profileMap[a.patient_id].last_name}`
+            : 'Patient',
+        })));
+      } else {
+        setAppointments([]);
       }
-      setLoading(false);
-    };
-    fetch();
-  }, [user]);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchData(); }, [user]);
 
   const handleAction = async (id: string, status: string) => {
     const { error } = await supabase.from('appointments').update({ status }).eq('id', id);
@@ -65,7 +81,7 @@ const DoctorDashboard = () => {
             ) : pending.map(a => (
               <div key={a.id} className="flex items-center gap-3 p-3 rounded border border-border mb-2">
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">{a.profiles?.first_name} {a.profiles?.last_name}</p>
+                  <p className="text-sm font-medium text-foreground">{a.patient_name}</p>
                   <p className="text-xs text-muted-foreground">{a.appointment_date} · {a.start_time?.slice(0, 5)}</p>
                 </div>
                 <Button size="sm" onClick={() => handleAction(a.id, 'confirmed')}>
@@ -88,7 +104,7 @@ const DoctorDashboard = () => {
               <div key={a.id} className="flex items-center gap-3 p-3 rounded bg-muted/50 mb-2">
                 <span className="text-sm font-mono text-primary w-12">{a.start_time?.slice(0, 5)}</span>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">{a.profiles?.first_name} {a.profiles?.last_name}</p>
+                  <p className="text-sm font-medium text-foreground">{a.patient_name}</p>
                 </div>
                 <Badge variant="outline">{a.status}</Badge>
               </div>

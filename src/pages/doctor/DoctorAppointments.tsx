@@ -15,12 +15,29 @@ const DoctorAppointments = () => {
     const fetch = async () => {
       const { data: prov } = await supabase.from('providers').select('id').eq('user_id', user.id).single();
       if (prov) {
-        const { data } = await supabase
+        const { data: appts } = await supabase
           .from('appointments')
-          .select('*, profiles:patient_id(first_name, last_name)')
+          .select('*')
           .eq('provider_id', prov.id)
           .order('appointment_date', { ascending: false });
-        setAppointments(data || []);
+
+        if (appts && appts.length > 0) {
+          const patientIds = [...new Set(appts.map(a => a.patient_id))];
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('user_id, first_name, last_name')
+            .in('user_id', patientIds);
+
+          const profileMap = Object.fromEntries((profiles || []).map(p => [p.user_id, p]));
+          setAppointments(appts.map(a => ({
+            ...a,
+            patient_name: profileMap[a.patient_id]
+              ? `${profileMap[a.patient_id].first_name} ${profileMap[a.patient_id].last_name}`
+              : 'Patient',
+          })));
+        } else {
+          setAppointments([]);
+        }
       }
     };
     fetch();
@@ -46,7 +63,7 @@ const DoctorAppointments = () => {
                 <div key={a.id} className="flex items-center gap-3 p-3 rounded border border-border">
                   <Clock className="h-4 w-4 text-primary shrink-0" />
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-foreground">{a.profiles?.first_name} {a.profiles?.last_name}</p>
+                    <p className="text-sm font-medium text-foreground">{a.patient_name}</p>
                     <p className="text-xs text-muted-foreground">{a.appointment_date} · {a.start_time?.slice(0, 5)}</p>
                   </div>
                   <Badge variant="outline">{a.status}</Badge>
