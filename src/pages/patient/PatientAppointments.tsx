@@ -17,12 +17,29 @@ const PatientAppointments = () => {
 
   const fetchAppointments = async () => {
     if (!user) return;
-    const { data } = await supabase
+    const { data: appts } = await supabase
       .from('appointments')
-      .select('*, providers(specialization, profiles:user_id(first_name, last_name))')
+      .select('*, providers(id, specialization, user_id)')
       .eq('patient_id', user.id)
       .order('appointment_date', { ascending: false });
-    setAppointments(data || []);
+
+    if (appts && appts.length > 0) {
+      const providerUserIds = [...new Set(appts.map(a => a.providers?.user_id).filter(Boolean))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, first_name, last_name')
+        .in('user_id', providerUserIds);
+
+      const profileMap = Object.fromEntries((profiles || []).map(p => [p.user_id, p]));
+      setAppointments(appts.map(a => ({
+        ...a,
+        doctor_name: a.providers?.user_id && profileMap[a.providers.user_id]
+          ? `Dr. ${profileMap[a.providers.user_id].first_name} ${profileMap[a.providers.user_id].last_name}`
+          : 'Doctor',
+      })));
+    } else {
+      setAppointments([]);
+    }
     setLoading(false);
   };
 
@@ -54,9 +71,7 @@ const PatientAppointments = () => {
                 <div key={a.id} className="flex items-center gap-3 p-3 rounded border border-border">
                   <Clock className="h-4 w-4 text-primary shrink-0" />
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-foreground">
-                      Dr. {a.providers?.profiles?.first_name} {a.providers?.profiles?.last_name}
-                    </p>
+                    <p className="text-sm font-medium text-foreground">{a.doctor_name}</p>
                     <p className="text-xs text-muted-foreground">{a.providers?.specialization} · {a.appointment_date} · {a.start_time?.slice(0, 5)}</p>
                   </div>
                   <Badge variant="outline">{a.status}</Badge>

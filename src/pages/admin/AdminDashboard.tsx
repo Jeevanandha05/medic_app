@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { SimpleLayout } from '@/components/layout/SimpleLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 
 const COLORS = ['hsl(173,58%,39%)', 'hsl(198,66%,48%)', 'hsl(38,92%,50%)', 'hsl(0,84%,60%)'];
 
@@ -11,7 +11,7 @@ const AdminDashboard = () => {
   const [statusData, setStatusData] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchStats = async () => {
       const [provRes, apptRes, profRes, revRes] = await Promise.all([
         supabase.from('providers').select('id', { count: 'exact', head: true }),
         supabase.from('appointments').select('id, status'),
@@ -28,7 +28,7 @@ const AdminDashboard = () => {
       (apptRes.data || []).forEach((a: any) => { counts[a.status] = (counts[a.status] || 0) + 1; });
       setStatusData(Object.entries(counts).map(([name, value]) => ({ name, value })));
     };
-    fetch();
+    fetchStats();
   }, []);
 
   return (
