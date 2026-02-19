@@ -1,0 +1,4 @@
+
+-- Fix the overly permissive notification insert policy
+DROP POLICY "Insert notifications" ON public.notifications;
+CREATE POLICY "Users insert own notifications" ON public.notifications FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
