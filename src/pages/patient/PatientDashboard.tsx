@@ -6,7 +6,7 @@ import { SimpleLayout } from '@/components/layout/SimpleLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Brain, ArrowRight } from 'lucide-react';
+import { Calendar, Clock, ArrowRight } from 'lucide-react';
 
 const PatientDashboard = () => {
   const { user } = useAuthStore();
@@ -77,21 +77,6 @@ const PatientDashboard = () => {
             </CardContent>
           </Card>
         </div>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Brain className="h-5 w-5 text-primary" />
-              <div className="flex-1">
-                <p className="font-medium text-foreground">AI Recommendation</p>
-                <p className="text-sm text-muted-foreground">Get personalized scheduling insights from AI</p>
-              </div>
-              <Button size="sm" onClick={() => navigate('/patient/ai-insights')}>
-                View Insights <ArrowRight className="h-3 w-3 ml-1" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">

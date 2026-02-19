@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/store/authStore';
 import {
-  Calendar, Home, Users, Settings, Bell, LogOut, Menu, X, Brain,
+  Calendar, Home, Users, Settings, Bell, LogOut, Menu, X,
   Stethoscope, Clock, Star, BarChart3, Shield, FileText, User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ const patientNav = [
   { label: 'Dashboard', icon: Home, path: '/patient' },
   { label: 'Book Appointment', icon: Calendar, path: '/patient/book' },
   { label: 'My Appointments', icon: Clock, path: '/patient/appointments' },
-  { label: 'AI Insights', icon: Brain, path: '/patient/ai-insights' },
+
   { label: 'My Reviews', icon: Star, path: '/patient/reviews' },
   { label: 'Settings', icon: Settings, path: '/patient/settings' },
 ];
@@ -22,7 +22,6 @@ const doctorNav = [
   { label: 'Dashboard', icon: Home, path: '/doctor' },
   { label: 'Appointments', icon: Calendar, path: '/doctor/appointments' },
   { label: 'Availability', icon: Clock, path: '/doctor/availability' },
-  { label: 'Patient Insights', icon: Brain, path: '/doctor/insights' },
   { label: 'Reviews', icon: Star, path: '/doctor/reviews' },
   { label: 'Settings', icon: Settings, path: '/doctor/settings' },
 ];

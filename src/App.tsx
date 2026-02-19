@@ -14,7 +14,6 @@ import NotFound from "./pages/NotFound";
 import PatientDashboard from "./pages/patient/PatientDashboard";
 import BookAppointment from "./pages/patient/BookAppointment";
 import PatientAppointments from "./pages/patient/PatientAppointments";
-import PatientAIInsights from "./pages/patient/PatientAIInsights";
 
 // Doctor pages
 import DoctorDashboard from "./pages/doctor/DoctorDashboard";
@@ -51,7 +50,6 @@ const AppRoutes = () => {
       <Route path="/patient" element={<ProtectedRoute allowedRoles={['patient']}><PatientDashboard /></ProtectedRoute>} />
       <Route path="/patient/book" element={<ProtectedRoute allowedRoles={['patient']}><BookAppointment /></ProtectedRoute>} />
       <Route path="/patient/appointments" element={<ProtectedRoute allowedRoles={['patient']}><PatientAppointments /></ProtectedRoute>} />
-      <Route path="/patient/ai-insights" element={<ProtectedRoute allowedRoles={['patient']}><PatientAIInsights /></ProtectedRoute>} />
 
       {/* Doctor */}
       <Route path="/doctor" element={<ProtectedRoute allowedRoles={['doctor']}><DoctorDashboard /></ProtectedRoute>} />

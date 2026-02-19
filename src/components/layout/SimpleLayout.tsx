@@ -8,7 +8,7 @@ const patientLinks = [
   { label: 'Dashboard', path: '/patient' },
   { label: 'Book', path: '/patient/book' },
   { label: 'Appointments', path: '/patient/appointments' },
-  { label: 'AI Insights', path: '/patient/ai-insights' },
+
 ];
 
 const doctorLinks = [
