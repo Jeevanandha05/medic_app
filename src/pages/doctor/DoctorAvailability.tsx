@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/store/authStore';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { SimpleLayout } from '@/components/layout/SimpleLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Clock } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 
 const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const times = Array.from({ length: 20 }, (_, i) => {
@@ -40,17 +40,11 @@ const DoctorAvailability = () => {
   const addSlot = async () => {
     if (!provider) return;
     const { data, error } = await supabase.from('availability_slots').insert({
-      provider_id: provider.id,
-      day_of_week: parseInt(dayOfWeek),
-      start_time: startTime + ':00',
-      end_time: endTime + ':00',
+      provider_id: provider.id, day_of_week: parseInt(dayOfWeek),
+      start_time: startTime + ':00', end_time: endTime + ':00',
     }).select().single();
-    if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    } else {
-      setSlots(prev => [...prev, data]);
-      toast({ title: 'Slot added' });
-    }
+    if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    else { setSlots(prev => [...prev, data]); toast({ title: 'Slot added' }); }
   };
 
   const removeSlot = async (id: string) => {
@@ -60,62 +54,54 @@ const DoctorAvailability = () => {
   };
 
   return (
-    <DashboardLayout>
+    <SimpleLayout>
       <div className="space-y-6">
         <h1 className="text-2xl font-bold text-foreground">Manage Availability</h1>
 
         <Card>
-          <CardHeader><CardTitle className="text-base">Add Time Slot</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-sm">Add Time Slot</CardTitle></CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-3 items-end">
-              <div className="space-y-1">
-                <label className="text-sm text-muted-foreground">Day</label>
+              <div><label className="text-xs text-muted-foreground">Day</label>
                 <Select value={dayOfWeek} onValueChange={setDayOfWeek}>
-                  <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
                   <SelectContent>{days.map((d, i) => <SelectItem key={i} value={String(i)}>{d}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1">
-                <label className="text-sm text-muted-foreground">Start</label>
+              <div><label className="text-xs text-muted-foreground">Start</label>
                 <Select value={startTime} onValueChange={setStartTime}>
-                  <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
                   <SelectContent>{times.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1">
-                <label className="text-sm text-muted-foreground">End</label>
+              <div><label className="text-xs text-muted-foreground">End</label>
                 <Select value={endTime} onValueChange={setEndTime}>
-                  <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
                   <SelectContent>{times.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <Button onClick={addSlot} className="gradient-primary text-primary-foreground"><Plus className="h-4 w-4 mr-1" /> Add</Button>
+              <Button onClick={addSlot}><Plus className="h-4 w-4 mr-1" /> Add</Button>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader><CardTitle className="text-base">Current Slots</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-sm">Current Slots</CardTitle></CardHeader>
           <CardContent>
             {slots.length === 0 ? (
-              <p className="text-center py-6 text-muted-foreground">No availability slots set</p>
-            ) : (
-              <div className="space-y-2">
-                {slots.map(slot => (
-                  <div key={slot.id} className="flex items-center gap-4 p-3 rounded-lg border border-border">
-                    <Clock className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium text-foreground">{days[slot.day_of_week]}</span>
-                    <span className="text-sm text-muted-foreground">{slot.start_time?.slice(0, 5)} – {slot.end_time?.slice(0, 5)}</span>
-                    <div className="flex-1" />
-                    <Button variant="ghost" size="icon" onClick={() => removeSlot(slot.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                  </div>
-                ))}
+              <p className="text-center py-4 text-muted-foreground">No slots set</p>
+            ) : slots.map(s => (
+              <div key={s.id} className="flex items-center gap-3 p-2 rounded border border-border mb-2">
+                <span className="text-sm font-medium text-foreground w-24">{days[s.day_of_week]}</span>
+                <span className="text-sm text-muted-foreground">{s.start_time?.slice(0, 5)} – {s.end_time?.slice(0, 5)}</span>
+                <div className="flex-1" />
+                <Button variant="ghost" size="icon" onClick={() => removeSlot(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
               </div>
-            )}
+            ))}
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
+    </SimpleLayout>
   );
 };
 
