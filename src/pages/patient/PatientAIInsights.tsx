@@ -1,85 +1,133 @@
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { SimpleLayout } from '@/components/layout/SimpleLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Brain, TrendingUp, AlertTriangle, Calendar, ArrowRight, Sparkles } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Badge } from '@/components/ui/badge';
+import { Brain, Calendar, TrendingUp, Clock, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
-const mockInsights = [
-  {
-    type: 'follow_up',
-    title: 'Follow-up Recommended',
-    description: 'Based on your last visit for hypertension management, a follow-up is recommended within 2 weeks.',
-    confidence: 0.92,
-    urgency: 'high',
-    icon: Calendar,
-  },
-  {
-    type: 'no_show_risk',
-    title: 'Low No-Show Risk',
-    description: 'Your attendance record is excellent. Keep up your great scheduling habits!',
-    confidence: 0.88,
-    urgency: 'low',
-    icon: TrendingUp,
-  },
-  {
-    type: 'optimal_time',
-    title: 'Best Time to Visit',
-    description: 'Based on your history, Tuesday mornings (9-11 AM) are your preferred and most consistent slots.',
-    confidence: 0.85,
-    urgency: 'medium',
-    icon: Sparkles,
-  },
-];
+const PatientAIInsights = () => {
+  const { toast } = useToast();
+  const [insights, setInsights] = useState<any>(null);
+  const [summary, setSummary] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
 
-const urgencyColor = (u: string) => {
-  if (u === 'high') return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
-  if (u === 'medium') return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
-  return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+  const fetchInsights = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-insights', {
+        body: { action: 'analyze' },
+      });
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+      setInsights(data.insights);
+      setSummary(data.appointments_summary);
+    } catch (e: any) {
+      toast({ title: 'AI Error', description: e.message, variant: 'destructive' });
+    }
+    setLoading(false);
+  };
+
+  return (
+    <SimpleLayout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-foreground">AI Health Insights</h1>
+          <Button onClick={fetchInsights} disabled={loading}>
+            {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Analyzing...</> : <><Brain className="h-4 w-4 mr-2" /> Generate Insights</>}
+          </Button>
+        </div>
+
+        {!insights && !loading && (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <Brain className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+              <p className="text-muted-foreground">Click "Generate Insights" to get AI-powered analysis of your appointment history.</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {insights && (
+          <div className="space-y-4">
+            {summary && (
+              <div className="grid grid-cols-4 gap-3">
+                {[
+                  { label: 'Total', value: summary.total },
+                  { label: 'Completed', value: summary.completed },
+                  { label: 'Cancelled', value: summary.cancelled },
+                  { label: 'No-shows', value: summary.no_shows },
+                ].map((s, i) => (
+                  <Card key={i}>
+                    <CardContent className="p-3 text-center">
+                      <p className="text-xs text-muted-foreground">{s.label}</p>
+                      <p className="text-xl font-bold text-foreground">{s.value}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {insights.health_summary && (
+              <Card>
+                <CardContent className="p-4">
+                  <p className="text-sm text-foreground">{insights.health_summary}</p>
+                </CardContent>
+              </Card>
+            )}
+
+            <div className="grid md:grid-cols-3 gap-4">
+              {insights.follow_up && (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-primary" /> Follow-up
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Badge variant="outline" className="mb-2">{insights.follow_up.urgency} urgency</Badge>
+                    <p className="text-sm text-muted-foreground">{insights.follow_up.reason}</p>
+                    {insights.follow_up.suggested_days && (
+                      <p className="text-xs text-primary mt-2">Suggested in {insights.follow_up.suggested_days} days</p>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {insights.no_show_risk && (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-primary" /> No-Show Risk
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Badge variant="outline" className="mb-2">{insights.no_show_risk.level} risk</Badge>
+                    <p className="text-sm text-muted-foreground">{insights.no_show_risk.tips}</p>
+                    <p className="text-xs text-primary mt-2">Score: {insights.no_show_risk.score}/100</p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {insights.optimal_times && (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-primary" /> Best Time
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="font-medium text-foreground text-sm">{insights.optimal_times.best_day} at {insights.optimal_times.best_time}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{insights.optimal_times.reason}</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </SimpleLayout>
+  );
 };
-
-const PatientAIInsights = () => (
-  <DashboardLayout>
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">AI Health Insights</h1>
-        <p className="text-muted-foreground">Personalized recommendations powered by AI</p>
-      </div>
-
-      <div className="space-y-4">
-        {mockInsights.map((insight, i) => (
-          <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
-            <Card className="border-border/50 hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="h-12 w-12 rounded-xl bg-accent flex items-center justify-center shrink-0">
-                    <insight.icon className="h-6 w-6 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-foreground">{insight.title}</h3>
-                      <Badge className={urgencyColor(insight.urgency)}>{insight.urgency}</Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-3">{insight.description}</p>
-                    <div className="flex items-center gap-4">
-                      <span className="text-xs text-muted-foreground">
-                        Confidence: <strong className="text-foreground">{Math.round(insight.confidence * 100)}%</strong>
-                      </span>
-                      {insight.type === 'follow_up' && (
-                        <Button size="sm" variant="outline">
-                          Schedule <ArrowRight className="h-3 w-3 ml-1" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
-      </div>
-    </div>
-  </DashboardLayout>
-);
 
 export default PatientAIInsights;

@@ -1,4 +1,4 @@
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { SimpleLayout } from '@/components/layout/SimpleLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 
@@ -21,17 +21,16 @@ const sentimentData = [
 ];
 
 const AdminAnalytics = () => (
-  <DashboardLayout>
+  <SimpleLayout>
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-foreground">Platform Analytics</h1>
-
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-2 gap-6">
         <Card>
-          <CardHeader><CardTitle className="text-base">Booking Trends</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-sm">Booking Trends</CardTitle></CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
+            <ResponsiveContainer width="100%" height={250}>
               <AreaChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(214,32%,91%)" />
+                <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip />
@@ -40,13 +39,12 @@ const AdminAnalytics = () => (
             </ResponsiveContainer>
           </CardContent>
         </Card>
-
         <Card>
-          <CardHeader><CardTitle className="text-base">Cancellations & No-Shows</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-sm">Cancellations & No-Shows</CardTitle></CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
+            <ResponsiveContainer width="100%" height={250}>
               <BarChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(214,32%,91%)" />
+                <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip />
@@ -56,13 +54,12 @@ const AdminAnalytics = () => (
             </ResponsiveContainer>
           </CardContent>
         </Card>
-
-        <Card className="lg:col-span-2">
-          <CardHeader><CardTitle className="text-base">Review Sentiment Trends</CardTitle></CardHeader>
+        <Card className="md:col-span-2">
+          <CardHeader><CardTitle className="text-sm">Sentiment Trends</CardTitle></CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
+            <ResponsiveContainer width="100%" height={250}>
               <LineChart data={sentimentData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(214,32%,91%)" />
+                <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip />
@@ -75,7 +72,7 @@ const AdminAnalytics = () => (
         </Card>
       </div>
     </div>
-  </DashboardLayout>
+  </SimpleLayout>
 );
 
 export default AdminAnalytics;
