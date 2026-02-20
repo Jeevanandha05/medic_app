@@ -55,30 +55,66 @@ const BookAppointment = () => {
   });
 
   const handleBook = async () => {
-    if (!user || !selectedProvider || !selectedDate || !selectedTime) return;
-    setBooking(true);
-    const [h, m] = selectedTime.split(':').map(Number);
-    const endMin = m + 30;
-    const endTime = `${(h + Math.floor(endMin / 60)).toString().padStart(2, '0')}:${(endMin % 60).toString().padStart(2, '0')}:00`;
-
-    const { error } = await supabase.from('appointments').insert({
-      patient_id: user.id,
-      provider_id: selectedProvider.id,
-      appointment_date: format(selectedDate, 'yyyy-MM-dd'),
-      start_time: selectedTime + ':00',
-      end_time: endTime,
-      status: 'pending',
-      type: 'consultation',
-    });
-    setBooking(false);
-    if (error) {
-      toast({ title: 'Booking failed', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: 'Appointment booked!' });
-      setSelectedProvider(null);
-      setSelectedDate(undefined);
-      setSelectedTime('');
+    if (!user || !selectedProvider || !selectedDate || !selectedTime) {
+      toast({ title: 'Error', description: 'Please select provider, date, and time', variant: 'destructive' });
+      return;
     }
+
+    // Validate date is not in the past
+    if (selectedDate < new Date()) {
+      toast({ title: 'Error', description: 'Cannot book appointments in the past', variant: 'destructive' });
+      return;
+    }
+
+    // Validate it's not a weekend
+    if (selectedDate.getDay() === 0 || selectedDate.getDay() === 6) {
+      toast({ title: 'Error', description: 'Appointments cannot be booked on weekends', variant: 'destructive' });
+      return;
+    }
+
+    setBooking(true);
+    try {
+      const [h, m] = selectedTime.split(':').map(Number);
+      const endMin = m + 30;
+      const endTime = `${(h + Math.floor(endMin / 60)).toString().padStart(2, '0')}:${(endMin % 60).toString().padStart(2, '0')}:00`;
+
+      // Check if appointment slot is already booked
+      const { data: existingAppt } = await supabase
+        .from('appointments')
+        .select('id')
+        .eq('provider_id', selectedProvider.id)
+        .eq('appointment_date', format(selectedDate, 'yyyy-MM-dd'))
+        .eq('start_time', selectedTime + ':00')
+        .single();
+
+      if (existingAppt) {
+        toast({ title: 'Error', description: 'This time slot is already booked', variant: 'destructive' });
+        setBooking(false);
+        return;
+      }
+
+      const { error } = await supabase.from('appointments').insert({
+        patient_id: user.id,
+        provider_id: selectedProvider.id,
+        appointment_date: format(selectedDate, 'yyyy-MM-dd'),
+        start_time: selectedTime + ':00',
+        end_time: endTime,
+        status: 'pending',
+        type: 'consultation',
+      });
+
+      if (error) {
+        toast({ title: 'Booking failed', description: error.message, variant: 'destructive' });
+      } else {
+        toast({ title: 'Success!', description: 'Appointment booked successfully' });
+        setSelectedProvider(null);
+        setSelectedDate(undefined);
+        setSelectedTime('');
+      }
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    }
+    setBooking(false);
   };
 
   return (
